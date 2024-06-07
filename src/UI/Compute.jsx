@@ -142,7 +142,7 @@ const Compute = () => {
                 </div>
                 <div>
                   <label className="text-white text-md block pb-2 font-semibold">
-                    Method
+                    Methods
                   </label>
                   <select
                     value={method}
