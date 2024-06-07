@@ -89,7 +89,7 @@ const Compute = () => {
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className="text-white text-md block pb-2 font-semibold">
-                    XL
+                    X<sub>L</sub>
                   </label>
                   <input
                     value={xl}
@@ -101,7 +101,7 @@ const Compute = () => {
                 </div>
                 <div>
                   <label className="text-white text-md block pb-2 font-semibold">
-                    XR
+                    X<sub>R</sub>
                   </label>
                   <input
                     value={xr}
