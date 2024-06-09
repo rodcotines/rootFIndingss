@@ -5,6 +5,7 @@ const Compute = () => {
   const [equation, setEquation] = useState("");
   const [xl, setXl] = useState(0);
   const [xr, setXr] = useState(0);
+  const [x0, setX0] = useState(0);
   const [precision, setPrecision] = useState(0);
   const [method, setMethod] = useState("Bisection");
   const [roundOff, setRoundOff] = useState(2);
@@ -14,51 +15,105 @@ const Compute = () => {
     let iteration = 0;
     let xlVal = parseFloat(xl);
     let xrVal = parseFloat(xr);
+    let x0Val = parseFloat(x0);
     let lastTwoYmValues = [];
     let iterate = [];
 
-    while (iteration < 100) {
-      iteration++;
+    if (method === "Newton") {
+      let relError = precision + 1;
+      let lastRelError = "";
 
-      let yl = evaluate(equation, xlVal);
-      let yr = evaluate(equation, xrVal);
+      while (iteration < 100) {
+        iteration++;
+        let fx = evaluate(equation, x0Val);
+        let primefx = evaluateDerivative(equation, x0Val);
 
-      let xm;
-      if (method === "Bisection") {
-        xm = (xlVal + xrVal) / 2;
-      } else if (method === "Falsi") {
-        xm = xlVal + (xrVal - xlVal) * (yl / (yl - yr));
+        let newx = x0Val - fx / primefx;
+
+        if (iteration === 1) {
+          lastRelError = "";
+        } else {
+          lastRelError = relError;
+        }
+
+        relError = Math.abs((newx - x0Val) / newx);
+
+        iterate.push({
+          iteration: iteration,
+          x0: x0Val,
+          newx: newx,
+          fx: fx,
+          primefx: primefx,
+          relError: lastRelError,
+        });
+
+        if (Math.abs(fx) <= 0.0) {
+          iterate.push({
+            iteration: iteration,
+            x0: x0Val,
+            newx: newx,
+            fx: 0,
+            primefx: primefx,
+            relError: 0,
+          });
+          break;
+        }
+
+        x0Val = newx;
       }
-      let ym = evaluate(equation, xm);
+    } else {
+      while (iteration < 100) {
+        iteration++;
 
-      iterate.push({
-        iteration: iteration,
-        xl: xlVal,
-        xr: xrVal,
-        xm: xm,
-        yl: yl,
-        yr: yr,
-        ym: ym,
-      });
+        let yl = evaluate(equation, xlVal);
+        let yr = evaluate(equation, xrVal);
 
-      lastTwoYmValues.push(ym);
-      if (lastTwoYmValues.length > 2) {
-        lastTwoYmValues.shift();
-      }
+        let xm;
+        if (method === "Bisection") {
+          xm = (xlVal + xrVal) / 2;
+        } else if (method === "Falsi") {
+          xm = xlVal + (xrVal - xlVal) * (yl / (yl - yr));
+        }
+        let ym = evaluate(equation, xm);
 
-      if (
-        iteration > 1 &&
-        Math.abs(lastTwoYmValues[1] - lastTwoYmValues[0]) < precision
-      ) {
-        break;
-      }
+        iterate.push({
+          iteration: iteration,
+          xl: xlVal,
+          xr: xrVal,
+          xm: xm,
+          yl: yl,
+          yr: yr,
+          ym: ym,
+        });
 
-      if (ym === 0.0) {
-        break;
-      } else if (ym * yl < 0) {
-        xrVal = xm;
-      } else {
-        xlVal = xm;
+        lastTwoYmValues.push(ym);
+        if (lastTwoYmValues.length > 2) {
+          lastTwoYmValues.shift();
+        }
+
+        if (
+          Math.abs(ym) <= precision &&
+          Math.abs(lastTwoYmValues[1] - lastTwoYmValues[0]) < precision
+        ) {
+          break;
+        }
+
+        if (ym === 0.0) {
+          iterate.push({
+            iteration: iteration,
+            xl: xlVal,
+            xr: xrVal,
+            xm: xm,
+            yl: yl,
+            yr: yr,
+            ym: ym,
+          });
+          break;
+        } else if (ym * yl < 0) {
+          xrVal = xm;
+        } else {
+          xlVal = xm;
+        }
       }
     }
 
@@ -67,6 +122,11 @@ const Compute = () => {
 
   const evaluate = (expression, x) => {
     return math.evaluate(expression.replace(/x/g, `(${x})`));
+  };
+
+  const evaluateDerivative = (expression, x) => {
+    const derivative = math.derivative(expression, "x");
+    return derivative.evaluate({ x: x });
   };
 
   const formatNumber = (number, decimals) => {
@@ -90,32 +150,47 @@ const Compute = () => {
                   placeholder="x^2 + 2*x"
                 ></input>
               </div>
-              <div className="grid grid-cols-2 gap-6">
+              {method !== "Newton" ? (
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="text-white text-md block pb-2 font-semibold">
+                      X<sub>L</sub>
+                    </label>
+                    <input
+                      value={xl}
+                      type="number"
+                      onChange={(e) => setXl(parseFloat(e.target.value))}
+                      className="rounded-md text-xm font-bold px-3 w-full h-10"
+                      placeholder="1"
+                    ></input>
+                  </div>
+                  <div>
+                    <label className="text-white text-md block pb-2 font-semibold">
+                      X<sub>R</sub>
+                    </label>
+                    <input
+                      value={xr}
+                      type="number"
+                      onChange={(e) => setXr(parseFloat(e.target.value))}
+                      className="rounded-md text-xm font-bold px-3 w-full h-10"
+                      placeholder="2"
+                    ></input>
+                  </div>
+                </div>
+              ) : (
                 <div>
                   <label className="text-white text-md block pb-2 font-semibold">
-                    X<sub>L</sub>
+                    X<sub>0</sub>
                   </label>
                   <input
-                    value={xl}
+                    value={x0}
                     type="number"
-                    onChange={(e) => setXl(parseFloat(e.target.value))}
+                    onChange={(e) => setX0(parseFloat(e.target.value))}
                     className="rounded-md text-xm font-bold px-3 w-full h-10"
                     placeholder="1"
                   ></input>
                 </div>
-                <div>
-                  <label className="text-white text-md block pb-2 font-semibold">
-                    X<sub>R</sub>
-                  </label>
-                  <input
-                    value={xr}
-                    type="number"
-                    onChange={(e) => setXr(parseFloat(e.target.value))}
-                    className="rounded-md text-xm font-bold px-3 w-full h-10"
-                    placeholder="2"
-                  ></input>
-                </div>
-              </div>
+              )}
               <div className="grid grid-cols-3 gap-6">
                 <div>
                   <label className="text-white text-md block pb-2 font-semibold">
@@ -154,7 +229,8 @@ const Compute = () => {
                     className="rounded-md text-xm font-md px-3 w-full h-10"
                   >
                     <option value="Bisection">Bisection</option>
-                    <option value="Falsi">Falsi</option>
+                    <option value="Falsi">False Position</option>
+                    <option value="Newton">Newton Raphson</option>
                   </select>
                 </div>
               </div>
@@ -178,36 +254,66 @@ const Compute = () => {
             <thead>
               <tr>
                 <th className="px-4 py-2">Iteration</th>
-                <th className="px-4 py-2">XL</th>
-                <th className="px-4 py-2">XM</th>
-                <th className="px-4 py-2">XR</th>
-                <th className="px-4 py-2">YL</th>
-                <th className="px-4 py-2">YM</th>
-                <th className="px-4 py-2">YR</th>
+                {method !== "Newton" ? (
+                  <>
+                    <th className="px-4 py-2">XL</th>
+                    <th className="px-4 py-2">XM</th>
+                    <th className="px-4 py-2">XR</th>
+                    <th className="px-4 py-2">YL</th>
+                    <th className="px-4 py-2">YM</th>
+                    <th className="px-4 py-2">YR</th>
+                  </>
+                ) : (
+                  <>
+                    <th className="px-4 py-2">X</th>
+                    <th className="px-4 py-2">f(X)</th>
+                    <th className="px-4 py-2">f'(X)</th>
+                    <th className="px-4 py-2">Relative Error</th>
+                  </>
+                )}
               </tr>
             </thead>
             <tbody>
               {results.map((item, index) => (
                 <tr key={index}>
                   <td className="border px-4 py-2">{item.iteration}</td>
-                  <td className="border px-4 py-2">
-                    {formatNumber(item.xl, roundOff)}
-                  </td>
-                  <td className="border px-4 py-2">
-                    {formatNumber(item.xm, roundOff)}
-                  </td>
-                  <td className="border px-4 py-2">
-                    {formatNumber(item.xr, roundOff)}
-                  </td>
-                  <td className="border px-4 py-2">
-                    {formatNumber(item.yl, roundOff)}
-                  </td>
-                  <td className="border px-4 py-2">
-                    {formatNumber(item.ym, roundOff)}
-                  </td>
-                  <td className="border px-4 py-2">
-                    {formatNumber(item.yr, roundOff)}
-                  </td>
+                  {method !== "Newton" ? (
+                    <>
+                      <td className="border px-4 py-2">
+                        {formatNumber(item.xl, roundOff)}
+                      </td>
+                      <td className="border px-4 py-2">
+                        {formatNumber(item.xm, roundOff)}
+                      </td>
+                      <td className="border px-4 py-2">
+                        {formatNumber(item.xr, roundOff)}
+                      </td>
+                      <td className="border px-4 py-2">
+                        {formatNumber(item.yl, roundOff)}
+                      </td>
+                      <td className="border px-4 py-2">
+                        {formatNumber(item.ym, roundOff)}
+                      </td>
+                      <td className="border px-4 py-2">
+                        {formatNumber(item.yr, roundOff)}
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td className="border px-4 py-2">
+                        {formatNumber(item.x0, roundOff)}
+                      </td>
+                      <td className="border px-4 py-2">
+                        {formatNumber(item.fx, roundOff)}
+                      </td>
+                      <td className="border px-4 py-2">
+                        {formatNumber(item.primefx, roundOff)}
+                      </td>
+                      <td className="border px-4 py-2">
+                        {formatNumber(item.relError * 100, roundOff)}%
+                      </td>
+                    </>
+                  )}
                 </tr>
               ))}
             </tbody>
