@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-
 import * as math from "mathjs";
+
 const Compute = () => {
   const [equation, setEquation] = useState("");
   const [xl, setXl] = useState(0);
@@ -67,6 +67,10 @@ const Compute = () => {
 
   const evaluate = (expression, x) => {
     return math.evaluate(expression.replace(/x/g, `(${x})`));
+  };
+
+  const formatNumber = (number, decimals) => {
+    return parseFloat(number.toFixed(decimals)).toString();
   };
 
   return (
@@ -187,22 +191,22 @@ const Compute = () => {
                 <tr key={index}>
                   <td className="border px-4 py-2">{item.iteration}</td>
                   <td className="border px-4 py-2">
-                    {item.xl.toFixed(roundOff)}
+                    {formatNumber(item.xl, roundOff)}
                   </td>
                   <td className="border px-4 py-2">
-                    {item.xm.toFixed(roundOff)}
+                    {formatNumber(item.xm, roundOff)}
                   </td>
                   <td className="border px-4 py-2">
-                    {item.xr.toFixed(roundOff)}
+                    {formatNumber(item.xr, roundOff)}
                   </td>
                   <td className="border px-4 py-2">
-                    {item.yl.toFixed(roundOff)}
+                    {formatNumber(item.yl, roundOff)}
                   </td>
                   <td className="border px-4 py-2">
-                    {item.ym.toFixed(roundOff)}
+                    {formatNumber(item.ym, roundOff)}
                   </td>
                   <td className="border px-4 py-2">
-                    {item.yr.toFixed(roundOff)}
+                    {formatNumber(item.yr, roundOff)}
                   </td>
                 </tr>
               ))}
