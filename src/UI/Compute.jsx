@@ -192,18 +192,20 @@ const Compute = () => {
                 </div>
               )}
               <div className="grid grid-cols-3 gap-6">
-                <div>
-                  <label className="text-white text-md block pb-2 font-semibold">
-                    Precision
-                  </label>
-                  <input
-                    value={precision}
-                    type="number"
-                    onChange={(e) => setPrecision(parseFloat(e.target.value))}
-                    className="rounded-md text-xm font-bold px-3 w-full h-10"
-                    placeholder="0.1"
-                  ></input>
-                </div>
+                {method !== "Newton" && (
+                  <div>
+                    <label className="text-white text-md block pb-2 font-semibold">
+                      Precision
+                    </label>
+                    <input
+                      value={precision}
+                      type="number"
+                      onChange={(e) => setPrecision(parseFloat(e.target.value))}
+                      className="rounded-md text-xm font-bold px-3 w-full h-10"
+                      placeholder="0.1"
+                    ></input>
+                  </div>
+                )}
                 <div>
                   <label className="text-white text-md block pb-2 font-semibold">
                     Round off
