@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import * as math from "mathjs";
 
 const Compute = () => {
@@ -11,40 +11,29 @@ const Compute = () => {
   const [method, setMethod] = useState("Bisection");
   const [roundOff, setRoundOff] = useState(2);
   const [results, setResults] = useState([]);
-
-  useEffect(() => {
-    // Clear results when method changes
-    setResults([]);
-  }, [method]);
-
-  const validateInputs = () => {
-    if (!equation) {
-      alert("Equation cannot be empty");
-      return false;
-    }
-    if (method !== "Newton" && method !== "Secant") {
-      if (xl === "" || xr === "" || precision === "") {
-        alert("All fields must be filled");
-        return false;
-      }
-    } else if (method === "Secant") {
-      if (x0 === "" || x1 === "") {
-        alert("All fields must be filled");
-        return false;
-      }
-    } else {
-      if (x0 === "") {
-        alert("All fields must be filled");
-        return false;
-      }
-    }
-    return true;
-  };
+  const [root, setRoot] = useState(null);
+  const [validationError, setValidationError] = useState("");
 
   const compute = () => {
-    if (!validateInputs()) {
+    if (
+      !equation ||
+      !precision ||
+      (method !== "Newton" && method !== "Secant" && (!xl || !xr)) ||
+      (method === "Secant" && (!x0 || !x1)) ||
+      (method === "Newton" && !x0)
+    ) {
+      setValidationError("All input fields must be filled.");
       return;
     }
+
+    if ((method === "Bisection" || method === "Falsi") && xl >= xr) {
+      setValidationError(
+        "For Bisection and False Position methods, initial XR must be greater than XL."
+      );
+      return;
+    }
+
+    setValidationError("");
 
     let iteration = 0;
     let xlVal = parseFloat(xl);
@@ -53,6 +42,7 @@ const Compute = () => {
     let x1Val = parseFloat(x1);
     let lastTwoYmValues = [];
     let iterate = [];
+    let rootVal = null;
 
     if (method === "Newton") {
       let relError = precision + 1;
@@ -76,28 +66,20 @@ const Compute = () => {
         iterate.push({
           iteration: iteration,
           x0: x0Val,
-          newx: newx,
           fx: fx,
           primefx: primefx,
           relError: lastRelError,
         });
 
-        if (Math.abs(fx) <= 0.0) {
-          iterate.push({
-            iteration: iteration,
-            x0: x0Val,
-            newx: newx,
-            fx: 0,
-            primefx: primefx,
-            relError: 0,
-          });
+        if (Math.abs(fx) <= precision) {
+          rootVal = x0Val;
           break;
         }
 
         x0Val = newx;
       }
     } else if (method === "Secant") {
-      let relError = 0; // Set initial relative error to 0
+      let relError = precision + 1;
       let lastRelError = 0;
 
       while (iteration < 100) {
@@ -119,13 +101,13 @@ const Compute = () => {
           iteration: iteration,
           x0: x0Val,
           x1: x1Val,
-          newx: newx,
           fx0: fx0,
           fx1: fx1,
           relError: lastRelError,
         });
 
-        if (relError <= precision) {
+        if (Math.abs(fx1) <= precision) {
+          rootVal = x1Val;
           break;
         }
 
@@ -162,23 +144,13 @@ const Compute = () => {
           lastTwoYmValues.shift();
         }
 
-        if (
-          Math.abs(ym) <= precision &&
-          Math.abs(lastTwoYmValues[1] - lastTwoYmValues[0]) < precision
-        ) {
+        if (Math.abs(lastTwoYmValues[1] - lastTwoYmValues[0]) < precision) {
+          rootVal = xm;
           break;
         }
 
         if (ym === 0.0) {
-          iterate.push({
-            iteration: iteration,
-            xl: xlVal,
-            xr: xrVal,
-            xm: xm,
-            yl: yl,
-            yr: yr,
-            ym: ym,
-          });
+          rootVal = xm;
           break;
         } else if (ym * yl < 0) {
           xrVal = xm;
@@ -189,6 +161,21 @@ const Compute = () => {
     }
 
     setResults(iterate);
+    setRoot(rootVal);
+  };
+
+  const clear = () => {
+    setEquation("");
+    setXl(0);
+    setXr(0);
+    setX0(0);
+    setX1(0);
+    setPrecision(0);
+    setMethod("Bisection");
+    setRoundOff(2);
+    setResults([]);
+    setRoot(null);
+    setValidationError(""); // Clear validation error on reset
   };
 
   const evaluate = (expression, x) => {
@@ -202,17 +189,6 @@ const Compute = () => {
 
   const formatNumber = (number, decimals) => {
     return parseFloat(number.toFixed(decimals)).toString();
-  };
-
-  const clear = () => {
-    setEquation("");
-    setXl(0);
-    setXr(0);
-    setX0(0);
-    setX1(0);
-    setPrecision(0);
-    setRoundOff(2);
-    setResults([]);
   };
 
   return (
@@ -236,7 +212,7 @@ const Compute = () => {
                 <div className="grid grid-cols-2 gap-6">
                   <div>
                     <label className="text-white text-md block pb-2 font-semibold">
-                      Initial value of X<sub>L</sub>
+                      X<sub>L</sub>
                     </label>
                     <input
                       value={xl}
@@ -248,7 +224,7 @@ const Compute = () => {
                   </div>
                   <div>
                     <label className="text-white text-md block pb-2 font-semibold">
-                      Initial value of X<sub>R</sub>
+                      X<sub>R</sub>
                     </label>
                     <input
                       value={xr}
@@ -263,7 +239,7 @@ const Compute = () => {
                 <div className="grid grid-cols-2 gap-6">
                   <div>
                     <label className="text-white text-md block pb-2 font-semibold">
-                      Initial value of X<sub>a</sub>
+                      X<sub>0</sub>
                     </label>
                     <input
                       value={x0}
@@ -275,7 +251,7 @@ const Compute = () => {
                   </div>
                   <div>
                     <label className="text-white text-md block pb-2 font-semibold">
-                      Initial value of X<sub>b</sub>
+                      X<sub>1</sub>
                     </label>
                     <input
                       value={x1}
@@ -289,7 +265,7 @@ const Compute = () => {
               ) : (
                 <div>
                   <label className="text-white text-md block pb-2 font-semibold">
-                    Initial value of X<sub>0</sub>
+                    X
                   </label>
                   <input
                     value={x0}
@@ -301,23 +277,21 @@ const Compute = () => {
                 </div>
               )}
               <div className="grid grid-cols-3 gap-6">
-                {method !== "Newton" && method !== "Secant" && (
-                  <div>
-                    <label className="text-white text-md block pb-2 font-semibold">
-                      Precision
-                    </label>
-                    <input
-                      value={precision}
-                      type="number"
-                      onChange={(e) => setPrecision(parseFloat(e.target.value))}
-                      className="rounded-md text-xm font-md px-3 w-full h-10"
-                      placeholder="0.1"
-                    ></input>
-                  </div>
-                )}
                 <div>
                   <label className="text-white text-md block pb-2 font-semibold">
-                    Round off (Decimal)
+                    Precision
+                  </label>
+                  <input
+                    value={precision}
+                    type="number"
+                    onChange={(e) => setPrecision(parseFloat(e.target.value))}
+                    className="rounded-md text-xm font-bold px-3 w-full h-10"
+                    placeholder="0.1"
+                  ></input>
+                </div>
+                <div>
+                  <label className="text-white text-md block pb-2 font-semibold">
+                    Round off
                   </label>
                   <select
                     value={roundOff}
@@ -347,12 +321,15 @@ const Compute = () => {
                 </div>
               </div>
             </div>
+            {validationError && (
+              <p className="text-red-500 text-center mb-4">{validationError}</p>
+            )}
             <button
               onClick={(e) => {
                 e.preventDefault(); // Prevents form submission
                 compute(); // Call the compute function
               }}
-              className="h-10 w-28 rounded-lg bg-white hover:bg-slate-400 font-bold"
+              className="h-10 w-28 rounded-lg bg-white hover:bg-slate-400 font-bold mr-4"
             >
               Submit
             </button>
@@ -361,7 +338,7 @@ const Compute = () => {
                 e.preventDefault(); // Prevents form submission
                 clear(); // Call the clear function
               }}
-              className="h-10 w-28 rounded-lg bg-white hover:bg-slate-400 font-bold ml-4"
+              className="h-10 w-28 rounded-lg bg-white hover:bg-slate-400 font-bold"
             >
               Clear
             </button>
@@ -369,12 +346,11 @@ const Compute = () => {
         </div>
       </div>
       <div className="mt-8 flex items-center justify-center">
-        <h2 className="text-white text-xl font-bold mb-4">Results</h2>
         <div className="overflow-x-auto">
-          <table className="table-auto w-[720px] text-center">
+          <table className="table-auto w-[720px] text-center ">
             <thead>
               <tr>
-                <th className="px-4 py-2 ">Iteration</th>
+                <th className="px-4 py-2">Iteration</th>
                 {method !== "Newton" ? (
                   <>
                     {method === "Secant" ? (
@@ -473,6 +449,13 @@ const Compute = () => {
               ))}
             </tbody>
           </table>
+          {root !== null && (
+            <div className="text-center mt-4">
+              <p className="text-black text-md font-bold">
+                Root: {formatNumber(root, roundOff)}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </>
