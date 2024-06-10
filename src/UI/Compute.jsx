@@ -236,7 +236,7 @@ const Compute = () => {
                 <div className="grid grid-cols-2 gap-6">
                   <div>
                     <label className="text-white text-md block pb-2 font-semibold">
-                      X<sub>L</sub>
+                      Initial value of X<sub>L</sub>
                     </label>
                     <input
                       value={xl}
@@ -248,7 +248,7 @@ const Compute = () => {
                   </div>
                   <div>
                     <label className="text-white text-md block pb-2 font-semibold">
-                      X<sub>R</sub>
+                      Initial value of X<sub>R</sub>
                     </label>
                     <input
                       value={xr}
@@ -263,7 +263,7 @@ const Compute = () => {
                 <div className="grid grid-cols-2 gap-6">
                   <div>
                     <label className="text-white text-md block pb-2 font-semibold">
-                      X<sub>0</sub>
+                      Initial value of X<sub>a</sub>
                     </label>
                     <input
                       value={x0}
@@ -275,7 +275,7 @@ const Compute = () => {
                   </div>
                   <div>
                     <label className="text-white text-md block pb-2 font-semibold">
-                      X<sub>1</sub>
+                      Initial value of X<sub>b</sub>
                     </label>
                     <input
                       value={x1}
@@ -289,7 +289,7 @@ const Compute = () => {
               ) : (
                 <div>
                   <label className="text-white text-md block pb-2 font-semibold">
-                    X<sub>0</sub>
+                    Initial value of X<sub>0</sub>
                   </label>
                   <input
                     value={x0}
@@ -317,7 +317,7 @@ const Compute = () => {
                 )}
                 <div>
                   <label className="text-white text-md block pb-2 font-semibold">
-                    Round off
+                    Round off (Decimal)
                   </label>
                   <select
                     value={roundOff}
